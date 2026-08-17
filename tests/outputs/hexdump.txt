@@ -1,0 +1,1 @@
+1 files, 5 examples, 5 passed, 0 timeout, 0 failed

@@ -169,8 +169,9 @@ This document lists each feature documented in README.md and indicates whether i
 - **Notes**: Comment indentation and content indentation tested
 
 ### Hexdump format
-- **Status**: ❌ NOT TESTED
-- **Notes**: `hexdump=1` option not covered
+- **Status**: ✅ TESTED
+- **Tests**: `test_file_based_test_cases[hexdump]` (file-based, 5 examples)
+- **Notes**: Tests various hexdump formats including simple hex, offset headers, ASCII representation, and end offset markers
 
 ## Comparison Semantics
 
@@ -245,14 +246,14 @@ This document lists each feature documented in README.md and indicates whether i
 ## Summary
 
 - **Total Features**: 41
-- **Tested**: 15 (36.6%)
+- **Tested**: 16 (39.0%)
 - **Partially Tested**: 2 (4.9%)
-- **Not Tested**: 24 (58.5%)
+- **Not Tested**: 23 (56.1%)
 
 ### Key Gaps
-1. **Configuration system**: `cli-test-cfg` block and all config options not tested
+1. **Configuration system**: `cli-test-cfg` block and most config options (timeout, run-dir, path, env, seq, reuse, prefix) not tested
 2. **CLI options**: Most command-line arguments not tested
 3. **Hooks**: Setup and cleanup hooks (both per-example and global) not tested
-4. **Advanced features**: Hexdump, custom comparison functions, file references for output
-5. **Concurrency and isolation**: Temporary directories, sequential/concurrent execution, reuse not tested
+4. **Advanced features**: Custom comparison functions, file references for output
+5. **Concurrency and isolation**: Sequential/concurrent execution, reuse not tested
 6. **Environment control**: PATH, environment variables, working directory customization

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shlex
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
 
 from .compare import default_compare, load_compare
 from .config import Config, default_config, merge_config
@@ -32,6 +34,56 @@ def _run_setup(cmd: Optional[str], cwd: Optional[str] = None, env: Optional[Dict
     subprocess.run(shlex.split(cmd), cwd=cwd, env=env, check=False)
 
 
+def _parse_hexdump(hexdump_str: str) -> bytes:
+    """Parse hexdump format and extract raw bytes.
+    
+    Handles various hexdump formats:
+    - Simple hex: "48 65 6c 6c 6f"
+    - With offsets: "00000000  48 65 6c 6c 6f"
+    - With ASCII: "00000000  48 65 6c 6c 6f  |hello|"
+    - Full format: "00000000  48 65 6c 6c 6f 0a 48 65  78 64 75 6d 70 0a  |hello.hexdump.|"
+    """
+    hex_bytes = []
+    
+    for line in hexdump_str.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        
+        # Skip column header lines (contain non-hex formatting like "0  1  2  3")
+        if any(c in line for c in '[]{}'):
+            continue
+        if line.startswith((' ', '\t')):
+            continue
+        # Skip lines that are only offset numbers (like "00000015")
+        if len(line) == 8 and all(c in '0123456789ABCDEFabcdef' for c in line):
+            continue
+        # Skip column headers (lines starting with spaces and containing hex digits)
+        if re.match(r'^\s+[0-9A-Fa-f\s]+$', line) and '|' not in line:
+            # Check if this looks like a header line
+            parts = line.split()
+            if all(len(p) <= 2 for p in parts):
+                continue
+        
+        # Remove ASCII representation part (everything after and including '|')
+        if '|' in line:
+            line = line.split('|')[0].rstrip()
+        
+        # Remove leading offset (8 hex digits followed by spaces)
+        # Pattern: 8 hex digits, optional spaces, then hex bytes
+        line = re.sub(r'^[0-9a-fA-F]{8}\s+', '', line)
+        
+        # Extract all hex byte sequences (pairs of hex digits, possibly with spaces)
+        # This regex finds all 2-character hex sequences separated by spaces
+        hex_pairs = re.findall(r'[0-9a-fA-F]{2}', line)
+        hex_bytes.extend(hex_pairs)
+    
+    # Convert hex byte strings to actual bytes
+    if hex_bytes:
+        return bytes.fromhex(''.join(hex_bytes))
+    return b""
+
+
 def _resolve_expected(raw: str, source_path: Path, hexdump: int) -> bytes:
     if not raw:
         return b""
@@ -40,8 +92,7 @@ def _resolve_expected(raw: str, source_path: Path, hexdump: int) -> bytes:
         return file_path.read_bytes()
     value = raw.encode("utf-8")
     if hexdump:
-        cleaned = "".join(ch for ch in raw if ch not in " \t\r\n")
-        return bytes.fromhex(cleaned)
+        return _parse_hexdump(raw)
     return value
 
 

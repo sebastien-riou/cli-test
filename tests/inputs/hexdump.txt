@@ -1,0 +1,50 @@
+#Raw bytes sequence
+cli-test-cmd
+python -c "import sys; sys.stdout.write('hello\nhexdump\nworld!')"
+cli-test-cfg
+hexdump=1
+cli-test-out
+68 65 6c 6c 6f 0a 68 65 78 64 75 6d 70 0a 77 6f 72 6c 64 21
+cli-test-end
+
+#Hexdump with 32bit offsets, 16 bytes per line
+cli-test-cmd
+python -c "import sys; sys.stdout.write('hello\nhexdump\nworld!')"
+cli-test-cfg
+hexdump=1
+cli-test-out
+00000000  68 65 6c 6c 6f 0a 68 65  78 64 75 6d 70 0a 77 6f  
+00000010  72 6c 64 21                                        
+cli-test-end
+
+#Hexdump with 32bit offsets, 16 bytes per line and ASCII view
+cli-test-cmd
+python -c "import sys; sys.stdout.write('hello\nhexdump\nworld!')"
+cli-test-cfg
+hexdump=1
+cli-test-out
+00000000  68 65 6c 6c 6f 0a 68 65  78 64 75 6d 70 0a 77 6f  |hello.hexdump.wo|
+00000010  72 6c 64 21                                       |rld!|    
+cli-test-end
+
+#Exact output of hexdump -C
+cli-test-cmd
+python -c "import sys; sys.stdout.write('hello\nhexdump\nworld!')"
+cli-test-cfg
+hexdump=1
+cli-test-out
+00000000  68 65 6c 6c 6f 0a 68 65  78 64 75 6d 70 0a 77 6f  |hello.hexdump.wo|
+00000010  72 6c 64 21                                       |rld!|
+00000014
+cli-test-end
+
+#Hexdump with 32bit offsets, 16 bytes per line with offset header 
+cli-test-cmd
+python -c "import sys; sys.stdout.write('hello\nhexdump\nworld!')"
+cli-test-cfg
+hexdump=1
+cli-test-out
+           0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F
+00000000  68 65 6c 6c 6f 0a 68 65  78 64 75 6d 70 0a 77 6f  
+00000010  72 6c 64 21                                    
+cli-test-end
