@@ -158,3 +158,16 @@ By default, each example runs in a separate temporary directory. The example is 
 
 If `seq=1`, examples run sequentially. If `seq=0`, they may run concurrently.
 
+## Quick start
+
+A minimal demo file is available at [examples/demo.txt](examples/demo.txt).
+
+Run it directly with:
+
+```bash
+pipenv run python -m cli_test examples/demo.txt
+```
+
+This parses the file, executes the command, compares the output against the expected result, and prints a pass/fail summary.
+
+

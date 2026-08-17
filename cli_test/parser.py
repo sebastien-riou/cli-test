@@ -23,6 +23,14 @@ class Example:
     config: Dict[str, object] = field(default_factory=dict)
     path: Optional[Path] = None
     index: int = 0
+    block_prefix: str = ""
+    content_indent: str = ""
+    cmd_start_line: int = 0
+    stdout_start_line: int = 0
+    stderr_start_line: int = 0
+    cmd_lines: List[str] = field(default_factory=list)
+    stdout_lines: List[str] = field(default_factory=list)
+    stderr_lines: List[str] = field(default_factory=list)
 
 
 def _match_marker(line: str) -> Optional[Tuple[str, str]]:
@@ -97,7 +105,7 @@ def parse_file(path: Path | str) -> List[Example]:
     block_prefix = ""
     content_indent = ""
 
-    for line in lines:
+    for line_number, line in enumerate(lines, start=1):
         match = _match_marker(line)
         if match is not None:
             prefix, marker = match
@@ -107,6 +115,14 @@ def parse_file(path: Path | str) -> List[Example]:
                 sections = {"cmd": []}
                 block_prefix = prefix
                 content_indent = ""
+                current.block_prefix = prefix
+                current.content_indent = ""
+                current.cmd_start_line = line_number + 1
+                current.stdout_start_line = 0
+                current.stderr_start_line = 0
+                current.cmd_lines = []
+                current.stdout_lines = []
+                current.stderr_lines = []
                 continue
 
             if current is None:
@@ -119,17 +135,24 @@ def parse_file(path: Path | str) -> List[Example]:
 
             if marker == "cli-test-out":
                 current_section = "stdout"
+                current.stdout_start_line = line_number + 1
                 sections.setdefault("stdout", [])
                 continue
 
             if marker == "cli-test-err":
                 current_section = "stderr"
+                current.stderr_start_line = line_number + 1
                 sections.setdefault("stderr", [])
                 continue
 
             if marker == "cli-test-end":
                 if current is not None:
                     content_indent = _compute_content_indent(sections.get("cmd", []), block_prefix)
+                    current.block_prefix = block_prefix
+                    current.content_indent = content_indent
+                    current.cmd_lines = sections.get("cmd", [])
+                    current.stdout_lines = sections.get("stdout", [])
+                    current.stderr_lines = sections.get("stderr", [])
                     current.cmd = _normalize_block(sections.get("cmd", []), block_prefix, content_indent)
                     current.config = _parse_cfg_block(sections.get("cfg", []))
                     current.stdout = _normalize_block(sections.get("stdout", []), block_prefix, content_indent)
@@ -147,6 +170,11 @@ def parse_file(path: Path | str) -> List[Example]:
 
     if current is not None:
         content_indent = _compute_content_indent(sections.get("cmd", []), block_prefix)
+        current.block_prefix = block_prefix
+        current.content_indent = content_indent
+        current.cmd_lines = sections.get("cmd", [])
+        current.stdout_lines = sections.get("stdout", [])
+        current.stderr_lines = sections.get("stderr", [])
         current.cmd = _normalize_block(sections.get("cmd", []), block_prefix, content_indent)
         current.config = _parse_cfg_block(sections.get("cfg", []))
         current.stdout = _normalize_block(sections.get("stdout", []), block_prefix, content_indent)

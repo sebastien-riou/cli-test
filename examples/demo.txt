@@ -1,0 +1,17 @@
+cli-test-cmd
+python -c "import sys; sys.stdout.write('hello world')"
+cli-test-out
+hello world
+cli-test-end
+
+cli-test-cmd
+    python -c "import sys; sys.stdout.write('indent works too')"
+cli-test-out
+    indent works too
+cli-test-end
+
+cli-test-cmd
+python -c "import sys; sys.stdout.write('this is expected to fail')"
+cli-test-out
+this fails
+cli-test-end
