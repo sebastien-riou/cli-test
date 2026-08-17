@@ -1,0 +1,5 @@
+#    cli-test-cmd
+#        python -c "import sys; sys.stdout.write('test')"
+#    cli-test-out
+#        test
+#    cli-test-end

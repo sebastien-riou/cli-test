@@ -1,0 +1,5 @@
+cli-test-cmd
+python -c "import sys; sys.stderr.write('error output')"
+cli-test-err
+error output
+cli-test-end

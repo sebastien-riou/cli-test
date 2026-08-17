@@ -1,0 +1,5 @@
+cli-test-cmd
+python -c "import sys; sys.stdout.write('hello')"
+cli-test-out
+hello
+cli-test-end

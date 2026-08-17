@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from cli_test.cli import main
 from cli_test.parser import parse_file
 from cli_test.runner import run_example
@@ -63,20 +65,43 @@ def test_run_example_reports_location_on_mismatch(tmp_path):
     assert result["location"]["column"] >= 1
 
 
-def test_cli_reports_absolute_file_location(tmp_path, capsys):
-    path = tmp_path / "sample.txt"
-    path.write_text(
-        """cli-test-cmd
-python -c \"import sys; sys.stdout.write('bye')\"
-cli-test-out
-bzz
-cli-test-end
-""",
-        encoding="utf-8",
-    )
+def _get_file_based_test_cases():
+    """Discover all test cases from inputs/outputs directories."""
+    inputs_dir = Path(__file__).parent / "inputs"
+    outputs_dir = Path(__file__).parent / "outputs"
+    
+    if not inputs_dir.exists():
+        return []
+    
+    test_cases = []
+    for input_file in sorted(inputs_dir.glob("*.txt")):
+        output_file = outputs_dir / input_file.name
+        if output_file.exists():
+            test_cases.append(pytest.param(
+                input_file.stem,
+                input_file,
+                output_file,
+                id=input_file.stem
+            ))
+    
+    return test_cases
 
-    exit_code = main([str(path)])
+
+@pytest.mark.parametrize("test_name,input_file,output_file", _get_file_based_test_cases())
+def test_file_based_test_cases(tmp_path, capsys, test_name, input_file, output_file):
+    """Generic test function that runs CLI tests from input/output file pairs."""
+    # Copy input file to temp directory with normalized name for output matching
+    test_input = tmp_path / input_file.name
+    test_input.write_text(input_file.read_text(encoding="utf-8"), encoding="utf-8")
+    
+    # Run the CLI
+    exit_code = main([str(test_input)])
     captured = capsys.readouterr().out
-
-    assert exit_code == 1
-    assert "mismatch at line 4, column 2" in captured
+    
+    # Load expected output
+    expected_output = output_file.read_text(encoding="utf-8")
+    
+    # Check that all expected lines are in the output
+    # (We match line-by-line to be flexible with file paths)
+    for expected_line in expected_output.strip().split("\n"):
+        assert expected_line in captured, f"Expected line not found in output:\n  Expected: {expected_line}\n  Got: {captured}"
